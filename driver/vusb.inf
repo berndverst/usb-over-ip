@@ -1,0 +1,82 @@
+;
+; Virtual USB Controller Driver INF
+;
+; This INF installs the Virtual USB Controller driver as a root-enumerated device
+;
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = System
+ClassGuid   = {4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider    = %ManufacturerName%
+CatalogFile = vusb.cat
+DriverVer   = 01/28/2026,1.0.0.0
+PnpLockdown = 1
+
+[DestinationDirs]
+DefaultDestDir = 13
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+vusb.sys = 1,,
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName% = Standard,NTamd64
+
+[Standard.NTamd64]
+%VirtualUSB.DeviceDesc% = VirtualUSB_Device, Root\VirtualUSB
+
+[VirtualUSB_Device.NT]
+CopyFiles = VirtualUSB_Device.NT.Copy
+
+[VirtualUSB_Device.NT.Copy]
+vusb.sys
+
+;-------------- Service installation
+[VirtualUSB_Device.NT.Services]
+AddService = VirtualUSB,%SPSVCINST_ASSOCSERVICE%, VirtualUSB_Service_Inst
+
+; -------------- VirtualUSB driver install sections
+[VirtualUSB_Service_Inst]
+DisplayName    = %VirtualUSB.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %13%\vusb.sys
+
+;*****************************************
+; Device Interface Installation
+;*****************************************
+[VirtualUSB_Device.NT.Interfaces]
+AddInterface = {8d8e8c7a-1b2c-4d5e-9f0a-1b2c3d4e5f6a},,VirtualUSB_Interface
+
+[VirtualUSB_Interface]
+AddReg = VirtualUSB_Interface_AddReg
+
+[VirtualUSB_Interface_AddReg]
+HKR,,FriendlyName,,%VirtualUSB.DeviceDesc%
+
+;*****************************************
+; WDF Section
+;*****************************************
+[VirtualUSB_Device.NT.Wdf]
+KmdfService = VirtualUSB, VirtualUSB_wdfsect
+
+[VirtualUSB_wdfsect]
+KmdfLibraryVersion = 1.15
+
+;*****************************************
+; Strings Section
+;*****************************************
+[Strings]
+SPSVCINST_ASSOCSERVICE = 0x00000002
+ManufacturerName       = "Virtual USB Project"
+DiskName               = "Virtual USB Installation Disk"
+VirtualUSB.DeviceDesc  = "Virtual USB Controller"
+VirtualUSB.SVCDESC     = "Virtual USB Controller Driver"
