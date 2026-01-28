@@ -19,13 +19,15 @@ target_include_directories(vusb_protocol INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/p
 add_executable(vusb_server
     server/vusb_server.c
     server/vusb_server.h
+    server/vusb_server_urb.c
+    server/vusb_server_urb.h
 )
 target_link_libraries(vusb_server PRIVATE vusb_protocol)
 if(WIN32)
     target_link_libraries(vusb_server PRIVATE ws2_32)
 endif()
 
-# Client application
+# Basic client application (simulated devices only)
 add_executable(vusb_client
     client/vusb_client.c
     client/vusb_client.h
@@ -34,6 +36,57 @@ target_link_libraries(vusb_client PRIVATE vusb_protocol)
 if(WIN32)
     target_link_libraries(vusb_client PRIVATE ws2_32)
 endif()
+
+# Enhanced client with real USB capture
+add_executable(vusb_client_capture
+    client/vusb_client_enhanced.c
+    client/vusb_client.c
+    client/vusb_client.h
+    client/vusb_capture.c
+    client/vusb_capture.h
+    client/vusb_client_urb.c
+    client/vusb_client_urb.h
+)
+target_link_libraries(vusb_client_capture PRIVATE vusb_protocol)
+if(WIN32)
+    target_link_libraries(vusb_client_capture PRIVATE ws2_32 winusb setupapi)
+endif()
+
+# Test utility
+add_executable(vusb_test
+    tools/vusb_test.c
+)
+target_include_directories(vusb_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/protocol)
+
+# Install utility
+add_executable(vusb_install
+    tools/vusb_install.c
+)
+target_link_libraries(vusb_install PRIVATE setupapi newdev)
+
+# Install targets
+install(TARGETS vusb_server vusb_client vusb_client_capture vusb_test vusb_install
+    RUNTIME DESTINATION bin
+)
+
+# Install protocol headers
+install(FILES 
+    protocol/vusb_protocol.h
+    protocol/vusb_ioctl.h
+    DESTINATION include/vusb
+)
+
+# Copy driver files if building on Windows
+if(WIN32)
+    # Note: Driver must be built separately with WDK
+    message(STATUS "Driver source is in driver/ directory - build with WDK/VS")
+endif()
+
+# Package configuration
+set(CPACK_PACKAGE_NAME "VirtualUSB")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_VENDOR "Virtual USB Project")
+include(CPack)
 
 # Install targets
 install(TARGETS vusb_server vusb_client
