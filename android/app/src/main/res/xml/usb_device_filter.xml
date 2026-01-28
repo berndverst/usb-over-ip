@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- USB device filter - match all USB devices -->
+<resources>
+    <!-- Match all USB devices -->
+    <usb-device />
+    
+    <!-- You can also specify specific devices by vendor/product ID:
+    <usb-device vendor-id="1234" product-id="5678" />
+    -->
+    
+    <!-- Common device classes -->
+    <!-- HID devices (keyboards, mice, gamepads) -->
+    <usb-device class="3" />
+    
+    <!-- Mass storage -->
+    <usb-device class="8" />
+    
+    <!-- Hub -->
+    <usb-device class="9" />
+    
+    <!-- CDC (Communications) -->
+    <usb-device class="2" />
+    
+    <!-- Audio -->
+    <usb-device class="1" />
+    
+    <!-- Video -->
+    <usb-device class="14" />
+    
+    <!-- Vendor specific -->
+    <usb-device class="255" />
+</resources>

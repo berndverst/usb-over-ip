@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/pref_category_server"
+        app:iconSpaceReserved="false">
+
+        <EditTextPreference
+            android:key="server_address"
+            android:title="@string/pref_server_address"
+            android:summary="@string/pref_server_address_summary"
+            android:inputType="text"
+            app:iconSpaceReserved="false" />
+
+        <EditTextPreference
+            android:key="server_port"
+            android:title="@string/pref_server_port"
+            android:summary="@string/pref_server_port_summary"
+            android:defaultValue="7575"
+            android:inputType="number"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_category_behavior"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            android:key="auto_start_on_boot"
+            android:title="@string/pref_auto_start"
+            android:summary="@string/pref_auto_start_summary"
+            android:defaultValue="false"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="auto_attach_devices"
+            android:title="@string/pref_auto_attach"
+            android:summary="@string/pref_auto_attach_summary"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:key="auto_attach_new_devices"
+            android:title="@string/pref_auto_attach_new"
+            android:summary="@string/pref_auto_attach_new_summary"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_category_about"
+        app:iconSpaceReserved="false">
+
+        <Preference
+            android:key="version"
+            android:title="@string/pref_version"
+            android:summary="@string/pref_version_summary"
+            android:selectable="false"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

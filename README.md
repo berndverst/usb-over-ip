@@ -13,6 +13,7 @@ A Windows driver and server application that simulates USB devices over a networ
 - [Building](#building)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Android Client](#android-client)
 - [Security Considerations](#security-considerations)
 - [License](#license)
 
@@ -24,13 +25,14 @@ The Virtual USB Device Simulator creates a bridge between USB devices on a remot
 
 1. **A kernel-mode virtual USB host controller driver** that presents virtual USB devices to Windows
 2. **A server application** that manages connections and routes USB traffic
-3. **A client application** that captures real USB devices and forwards their data over the network
+3. **Client applications** for Windows and Android that capture real USB devices and forward their data
 
 This enables scenarios such as:
 - Accessing USB devices across network boundaries
 - USB device sharing between machines
 - Remote USB debugging and testing
 - Virtualization of USB devices for development
+- **Android TV as a USB hub** (e.g., NVIDIA Shield forwarding USB devices to Windows)
 
 ---
 
@@ -720,6 +722,96 @@ vusb_client_capture.exe --server 192.168.1.100 --device 1234:5678
 
 ---
 
+## Android Client
+
+The project includes a full-featured Android client that can run on phones, tablets, and Android TV devices (like NVIDIA Shield).
+
+### Features
+
+- **USB Host Support**: Captures USB devices connected to the Android device
+- **Mobile UI**: Material Design interface for phones and tablets
+- **Android TV UI**: Leanback interface for D-pad navigation on TV devices
+- **Foreground Service**: Persistent operation with notification
+- **Auto-start**: Can start automatically on device boot
+- **Auto-attach**: Automatically attach new USB devices
+
+### Supported Platforms
+
+| Platform | Minimum Version | Notes |
+|----------|-----------------|-------|
+| Android Phone/Tablet | Android 5.0 (API 21) | USB Host required |
+| Android TV | Android 5.0 (API 21) | USB Host required |
+| NVIDIA Shield TV | Android 9.0+ | Full support |
+| Fire TV | Android 5.0+ | May need sideloading |
+
+### Building the Android Client
+
+```bash
+cd android
+
+# Debug build
+gradlew.bat assembleDebug
+
+# Release build
+gradlew.bat assembleRelease
+```
+
+### Installing on Android TV / NVIDIA Shield
+
+```bash
+# Enable ADB on your Shield (Settings > Device Preferences > About > Build)
+# Connect via ADB
+adb connect <shield-ip>
+
+# Install the APK
+adb install android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### System-Level Installation (Root Required)
+
+For automatic USB permissions without prompts:
+
+```bash
+adb root
+adb remount
+adb push app-release.apk /system/priv-app/VUSBClient/VUSBClient.apk
+adb reboot
+```
+
+### Architecture
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                    Android Device / TV                          │
+│                                                                 │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐│
+│  │ USB Device  │───▶│ Android USB │───▶│ UsbDeviceManager    ││
+│  │             │    │ Host API    │    │ (enumeration)       ││
+│  └─────────────┘    └─────────────┘    └──────────┬──────────┘│
+│                                                    │           │
+│                                        ┌───────────▼─────────┐│
+│  ┌─────────────────┐                   │ UsbForwardingService││
+│  │ MainActivity    │◄─────────────────▶│ (foreground)        ││
+│  │ (Mobile UI)     │                   └───────────┬─────────┘│
+│  ├─────────────────┤                               │          │
+│  │ TvActivity      │                   ┌───────────▼─────────┐│
+│  │ (Leanback UI)   │                   │ VusbNetworkClient   ││
+│  └─────────────────┘                   │ (VUSB protocol)     ││
+│                                        └───────────┬─────────┘│
+└────────────────────────────────────────────────────┼──────────┘
+                                                     │
+                                              TCP/IP │ Port 7575
+                                                     ▼
+                                            ┌───────────────┐
+                                            │  VUSB Server  │
+                                            │  (Windows)    │
+                                            └───────────────┘
+```
+
+See [android/README.md](android/README.md) for detailed Android documentation.
+
+---
+
 ## Security Considerations
 
 ⚠️ **Warning**: This project is designed for development and testing. For production deployment:
@@ -752,6 +844,8 @@ vusb_client_capture.exe --server 192.168.1.100 --device 1234:5678
 | Device not appearing | Check Device Manager for errors |
 | URB failures | Enable verbose logging, check USB device |
 | Client crashes | Run as Administrator for WinUSB access |
+| Android: No USB devices | Ensure USB Host support, try powered hub |
+| Android TV: Permission denied | Install as system app or grant manually |
 
 ---
 
