@@ -93,10 +93,10 @@ class VusbNetworkClient {
             val connectMsg = ConnectMessage(clientName)
             sendMessage(VusbProtocol.Command.CONNECT, connectMsg.toByteArray())
             
-            // Wait for connect ACK
+            // Wait for connect response (server echoes CONNECT command with status)
             val (header, _) = receiveMessage()
-            if (header.command != VusbProtocol.Command.CONNECT_ACK) {
-                throw Exception("Expected CONNECT_ACK, got ${header.command}")
+            if (header.command != VusbProtocol.Command.CONNECT) {
+                throw Exception("Expected CONNECT response, got ${header.command}")
             }
             
             Log.d(TAG, "Connected successfully to $serverAddress:$port")
@@ -238,9 +238,9 @@ class VusbNetworkClient {
                     val (header, payload) = receiveMessage()
                     
                     when (header.command) {
-                        VusbProtocol.Command.KEEPALIVE -> {
-                            // Respond to keepalive
-                            Log.v(TAG, "Received keepalive")
+                        VusbProtocol.Command.PONG -> {
+                            // Response to our ping
+                            Log.v(TAG, "Received pong")
                         }
                         VusbProtocol.Command.DISCONNECT -> {
                             Log.d(TAG, "Server disconnected")
@@ -276,7 +276,7 @@ class VusbNetworkClient {
                 delay(KEEPALIVE_INTERVAL)
                 try {
                     if (isRunning.get()) {
-                        sendMessage(VusbProtocol.Command.KEEPALIVE, ByteArray(0))
+                        sendMessage(VusbProtocol.Command.PING, ByteArray(0))
                     }
                 } catch (e: Exception) {
                     Log.w(TAG, "Keepalive failed", e)

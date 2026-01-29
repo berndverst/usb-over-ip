@@ -88,17 +88,17 @@ class VusbNetworkClient: ObservableObject {
                             let connectMsg = ConnectMessage(clientName: clientName)
                             try await self.sendMessage(command: .connect, payload: connectMsg.toData())
                             
-                            // Wait for ACK
+                            // Wait for connect response (server echoes CONNECT command with status)
                             let (header, _) = try await self.receiveMessage()
                             
-                            if header.commandType == .connectAck {
+                            if header.commandType == .connect {
                                 self.connectionState = .connected(serverAddress: serverAddress)
                                 self.startReceiveLoop()
                                 self.startKeepAlive()
                                 continuation.resume(returning: true)
                             } else {
                                 throw NSError(domain: "VusbClient", code: -1, 
-                                            userInfo: [NSLocalizedDescriptionKey: "Expected CONNECT_ACK"])
+                                            userInfo: [NSLocalizedDescriptionKey: "Expected CONNECT response"])
                             }
                         } catch {
                             self.logger.error("Connection handshake failed: \(error.localizedDescription)")
@@ -282,8 +282,9 @@ class VusbNetworkClient: ObservableObject {
                 try? await sendMessage(command: .pong, payload: Data())
             }
             
-        case .keepAlive:
-            // Already handled by pong
+        case .pong:
+            // Response to our ping - connection is alive
+            logger.debug("Received pong from server")
             break
             
         case .urbSubmit:
@@ -322,8 +323,20 @@ class VusbNetworkClient: ObservableObject {
     // MARK: - Device Operations
     
     /// Attach a device to the server
+    /// Sends VUSB_DEVICE_INFO (208 bytes) + descriptorLength (4 bytes) + descriptors
     func attachDevice(_ device: VusbDeviceInfo) async throws {
-        try await sendMessage(command: .deviceAttach, payload: device.toData())
+        var payload = device.toData()
+        
+        // Combine device and config descriptors
+        var descriptors = Data()
+        descriptors.append(device.deviceDescriptor)
+        descriptors.append(device.configDescriptor)
+        
+        // Append descriptor length (4 bytes) and descriptor data
+        payload.append(contentsOf: withUnsafeBytes(of: UInt32(descriptors.count).littleEndian) { Array($0) })
+        payload.append(descriptors)
+        
+        try await sendMessage(command: .deviceAttach, payload: payload)
         logger.info("Device attached: \(device.displayName)")
     }
     

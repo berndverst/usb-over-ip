@@ -33,36 +33,41 @@ let VUSB_HEADER_SIZE: Int = 16
 enum VusbCommand: UInt16 {
     // Connection Management
     case connect = 0x0001
-    case connectAck = 0x0002
-    case disconnect = 0x0003
-    case ping = 0x0009
-    case pong = 0x000A
+    case disconnect = 0x0002
+    case ping = 0x0003
+    case pong = 0x0004
     
     // Device Management
-    case deviceAttach = 0x0004
-    case deviceDetach = 0x0005
+    case deviceAttach = 0x0010
+    case deviceDetach = 0x0011
     case deviceList = 0x0012
     case deviceInfo = 0x0013
     
     // USB Transfers
-    case urbSubmit = 0x0006
-    case urbComplete = 0x0007
+    case urbSubmit = 0x0020
+    case urbComplete = 0x0021
     case urbCancel = 0x0022
     
-    // Control
-    case reset = 0x0008
-    case keepAlive = 0x0009
-    case error = 0x000A
-    case status = 0x00FE
-    
-    // Extended commands
+    // Descriptor Requests
     case getDescriptor = 0x0030
     case descriptorData = 0x0031
+    
+    // Control Transfers
     case controlTransfer = 0x0040
     case controlResponse = 0x0041
+    
+    // Bulk/Interrupt Transfers
     case bulkTransfer = 0x0050
     case interruptTransfer = 0x0051
     case transferComplete = 0x0052
+    
+    // Isochronous Transfers
+    case isoTransfer = 0x0060
+    case isoComplete = 0x0061
+    
+    // Error/Status
+    case error = 0x00FF
+    case status = 0x00FE
 }
 
 // MARK: - Status Codes
@@ -220,33 +225,36 @@ struct VusbHeader {
 
 // MARK: - Connect Message
 
-/// Connect message payload
+/// Connect message payload matching VUSB_CONNECT_REQUEST (72 bytes)
+/// - ClientVersion: 4 bytes
+/// - Capabilities: 4 bytes
+/// - ClientName: 64 bytes (fixed, null-padded)
 struct ConnectMessage {
     let clientName: String
-    let clientVersion: String
-    let platform: String
+    let clientVersion: UInt32
+    let capabilities: UInt32
     
-    init(clientName: String, clientVersion: String = "1.0.0", platform: String = "macOS") {
+    init(clientName: String, clientVersion: UInt32 = 0x00010000, capabilities: UInt32 = 0) {
         self.clientName = clientName
         self.clientVersion = clientVersion
-        self.platform = platform
+        self.capabilities = capabilities
     }
     
     func toData() -> Data {
-        var data = Data()
+        var data = Data(capacity: 72)
         
+        // ClientVersion (4 bytes)
+        data.append(contentsOf: withUnsafeBytes(of: clientVersion.littleEndian) { Array($0) })
+        
+        // Capabilities (4 bytes)
+        data.append(contentsOf: withUnsafeBytes(of: capabilities.littleEndian) { Array($0) })
+        
+        // ClientName (64 bytes, fixed, null-padded)
+        var nameBytes = Data(count: 64)
         let nameData = clientName.data(using: .utf8) ?? Data()
-        let versionData = clientVersion.data(using: .utf8) ?? Data()
-        let platformData = platform.data(using: .utf8) ?? Data()
-        
-        data.append(UInt8(nameData.count))
-        data.append(nameData)
-        
-        data.append(UInt8(versionData.count))
-        data.append(versionData)
-        
-        data.append(UInt8(platformData.count))
-        data.append(platformData)
+        let copyLength = min(nameData.count, 63)  // Leave room for null terminator
+        nameBytes.replaceSubrange(0..<copyLength, with: nameData.prefix(copyLength))
+        data.append(nameBytes)
         
         return data
     }
@@ -255,6 +263,7 @@ struct ConnectMessage {
 // MARK: - Device Info
 
 /// USB device information for protocol messages
+/// Must match VUSB_DEVICE_INFO in vusb_protocol.h (208 bytes total)
 struct VusbDeviceInfo: Identifiable, Hashable {
     let id: Int32
     let vendorId: UInt16
@@ -263,6 +272,8 @@ struct VusbDeviceInfo: Identifiable, Hashable {
     let deviceSubclass: UInt8
     let deviceProtocol: UInt8
     let speed: VusbSpeed
+    let numConfigurations: UInt8
+    let numInterfaces: UInt8
     let manufacturer: String
     let product: String
     let serialNumber: String
@@ -271,6 +282,7 @@ struct VusbDeviceInfo: Identifiable, Hashable {
     
     init(id: Int32, vendorId: UInt16, productId: UInt16, deviceClass: UInt8 = 0,
          deviceSubclass: UInt8 = 0, deviceProtocol: UInt8 = 0, speed: VusbSpeed = .unknown,
+         numConfigurations: UInt8 = 1, numInterfaces: UInt8 = 1,
          manufacturer: String = "", product: String = "", serialNumber: String = "",
          deviceDescriptor: Data = Data(), configDescriptor: Data = Data()) {
         self.id = id
@@ -280,6 +292,8 @@ struct VusbDeviceInfo: Identifiable, Hashable {
         self.deviceSubclass = deviceSubclass
         self.deviceProtocol = deviceProtocol
         self.speed = speed
+        self.numConfigurations = numConfigurations
+        self.numInterfaces = numInterfaces
         self.manufacturer = manufacturer
         self.product = product
         self.serialNumber = serialNumber
@@ -287,50 +301,48 @@ struct VusbDeviceInfo: Identifiable, Hashable {
         self.configDescriptor = configDescriptor
     }
     
-    /// Serialize to protocol format
+    /// Serialize to protocol format matching VUSB_DEVICE_INFO (208 bytes)
     func toData() -> Data {
-        var data = Data()
+        var data = Data(capacity: 208)
         
-        // Device ID (4 bytes)
-        data.append(contentsOf: withUnsafeBytes(of: id.littleEndian) { Array($0) })
+        // DeviceId (4 bytes)
+        data.append(contentsOf: withUnsafeBytes(of: UInt32(bitPattern: id).littleEndian) { Array($0) })
         
-        // Vendor/Product IDs (2 bytes each)
+        // VendorId, ProductId (2 bytes each)
         data.append(contentsOf: withUnsafeBytes(of: vendorId.littleEndian) { Array($0) })
         data.append(contentsOf: withUnsafeBytes(of: productId.littleEndian) { Array($0) })
         
-        // Class info (1 byte each)
+        // DeviceClass, DeviceSubClass, DeviceProtocol, Speed (1 byte each)
         data.append(deviceClass)
         data.append(deviceSubclass)
         data.append(deviceProtocol)
         data.append(speed.rawValue)
         
-        // Strings with length prefix
-        let manufacturerData = manufacturer.data(using: .utf8) ?? Data()
-        data.append(UInt8(manufacturerData.count))
-        data.append(manufacturerData)
+        // NumConfigurations, NumInterfaces, Reserved[2] (4 bytes total)
+        data.append(numConfigurations)
+        data.append(numInterfaces)
+        data.append(contentsOf: [0, 0]) // Reserved padding
         
-        let productData = product.data(using: .utf8) ?? Data()
-        data.append(UInt8(productData.count))
-        data.append(productData)
-        
-        let serialData = serialNumber.data(using: .utf8) ?? Data()
-        data.append(UInt8(serialData.count))
-        data.append(serialData)
-        
-        // Device descriptor with 2-byte length
-        data.append(contentsOf: withUnsafeBytes(of: UInt16(deviceDescriptor.count).littleEndian) { Array($0) })
-        data.append(deviceDescriptor)
-        
-        // Config descriptor with 2-byte length
-        data.append(contentsOf: withUnsafeBytes(of: UInt16(configDescriptor.count).littleEndian) { Array($0) })
-        data.append(configDescriptor)
+        // Fixed-size strings (64 bytes each, null-padded)
+        data.append(fixedString(manufacturer, length: 64))
+        data.append(fixedString(product, length: 64))
+        data.append(fixedString(serialNumber, length: 64))
         
         return data
     }
     
-    /// Parse from protocol data
+    /// Convert string to fixed-length null-padded data
+    private func fixedString(_ string: String, length: Int) -> Data {
+        var data = Data(count: length)
+        let stringData = string.data(using: .utf8) ?? Data()
+        let copyLength = min(stringData.count, length - 1) // Leave room for null terminator
+        data.replaceSubrange(0..<copyLength, with: stringData.prefix(copyLength))
+        return data
+    }
+    
+    /// Parse from protocol data (VUSB_DEVICE_INFO format - 208 bytes)
     static func fromData(_ data: Data) -> VusbDeviceInfo? {
-        guard data.count >= 12 else { return nil }
+        guard data.count >= 208 else { return nil }
         
         var offset = 0
         
@@ -356,34 +368,28 @@ struct VusbDeviceInfo: Identifiable, Hashable {
         let speed = VusbSpeed(rawValue: speedByte) ?? .unknown
         offset += 1
         
-        // Parse strings
-        func readString() -> String {
-            guard offset < data.count else { return "" }
-            let length = Int(data[offset])
-            offset += 1
-            guard offset + length <= data.count else { return "" }
+        let numConfigurations = data[offset]
+        offset += 1
+        
+        let numInterfaces = data[offset]
+        offset += 1
+        
+        offset += 2 // Skip Reserved[2]
+        
+        // Parse fixed-size strings (64 bytes each, null-terminated)
+        func readFixedString(length: Int) -> String {
             let stringData = data.subdata(in: offset..<offset+length)
             offset += length
+            // Find null terminator
+            if let nullIndex = stringData.firstIndex(of: 0) {
+                return String(data: stringData.prefix(upTo: nullIndex), encoding: .utf8) ?? ""
+            }
             return String(data: stringData, encoding: .utf8) ?? ""
         }
         
-        let manufacturer = readString()
-        let product = readString()
-        let serialNumber = readString()
-        
-        // Parse descriptors
-        func readDescriptor() -> Data {
-            guard offset + 2 <= data.count else { return Data() }
-            let length = Int(data.subdata(in: offset..<offset+2).withUnsafeBytes { $0.load(as: UInt16.self).littleEndian })
-            offset += 2
-            guard offset + length <= data.count else { return Data() }
-            let descriptor = data.subdata(in: offset..<offset+length)
-            offset += length
-            return descriptor
-        }
-        
-        let deviceDescriptor = readDescriptor()
-        let configDescriptor = readDescriptor()
+        let manufacturer = readFixedString(length: 64)
+        let product = readFixedString(length: 64)
+        let serialNumber = readFixedString(length: 64)
         
         return VusbDeviceInfo(
             id: deviceId,
@@ -393,11 +399,11 @@ struct VusbDeviceInfo: Identifiable, Hashable {
             deviceSubclass: deviceSubclass,
             deviceProtocol: deviceProtocol,
             speed: speed,
+            numConfigurations: numConfigurations,
+            numInterfaces: numInterfaces,
             manufacturer: manufacturer,
             product: product,
-            serialNumber: serialNumber,
-            deviceDescriptor: deviceDescriptor,
-            configDescriptor: configDescriptor
+            serialNumber: serialNumber
         )
     }
     

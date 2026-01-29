@@ -24,18 +24,45 @@ object VusbProtocol {
     const val DEFAULT_PORT = 7575
     const val MAX_PAYLOAD_SIZE = 65536
     
-    // Protocol commands
+    // Protocol commands (must match vusb_protocol.h)
     object Command {
+        // Connection Management
         const val CONNECT: Short = 0x0001
-        const val CONNECT_ACK: Short = 0x0002
-        const val DISCONNECT: Short = 0x0003
-        const val ATTACH: Short = 0x0004
-        const val DETACH: Short = 0x0005
-        const val URB_SUBMIT: Short = 0x0006
-        const val URB_COMPLETE: Short = 0x0007
-        const val RESET: Short = 0x0008
-        const val KEEPALIVE: Short = 0x0009
-        const val ERROR: Short = 0x000A
+        const val DISCONNECT: Short = 0x0002
+        const val PING: Short = 0x0003
+        const val PONG: Short = 0x0004
+        
+        // Device Management
+        const val ATTACH: Short = 0x0010
+        const val DETACH: Short = 0x0011
+        const val DEVICE_LIST: Short = 0x0012
+        const val DEVICE_INFO: Short = 0x0013
+        
+        // USB Transfers
+        const val URB_SUBMIT: Short = 0x0020
+        const val URB_COMPLETE: Short = 0x0021
+        const val URB_CANCEL: Short = 0x0022
+        
+        // Descriptor Requests
+        const val GET_DESCRIPTOR: Short = 0x0030
+        const val DESCRIPTOR_DATA: Short = 0x0031
+        
+        // Control Transfers
+        const val CONTROL_TRANSFER: Short = 0x0040
+        const val CONTROL_RESPONSE: Short = 0x0041
+        
+        // Bulk/Interrupt Transfers
+        const val BULK_TRANSFER: Short = 0x0050
+        const val INTERRUPT_TRANSFER: Short = 0x0051
+        const val TRANSFER_COMPLETE: Short = 0x0052
+        
+        // Isochronous Transfers
+        const val ISO_TRANSFER: Short = 0x0060
+        const val ISO_COMPLETE: Short = 0x0061
+        
+        // Error/Status
+        const val ERROR: Short = 0x00FF.toShort()
+        const val STATUS: Short = 0x00FE.toShort()
     }
     
     // USB speeds
@@ -128,6 +155,7 @@ data class VusbHeader(
 
 /**
  * Device info for ATTACH command
+ * Must match VUSB_DEVICE_INFO in vusb_protocol.h (208 bytes total)
  */
 data class DeviceInfo(
     val deviceId: Int,
@@ -137,58 +165,64 @@ data class DeviceInfo(
     val deviceSubclass: Byte,
     val deviceProtocol: Byte,
     val speed: Byte,
+    val numConfigurations: Byte = 1,
+    val numInterfaces: Byte = 1,
     val manufacturer: String = "",
     val product: String = "",
     val serialNumber: String = "",
     val deviceDescriptor: ByteArray = ByteArray(0),
     val configDescriptor: ByteArray = ByteArray(0)
 ) {
+    /**
+     * Serialize to protocol format matching VUSB_DEVICE_INFO (208 bytes)
+     * followed by descriptorLength (4 bytes) and descriptors
+     */
     fun toByteArray(): ByteArray {
-        val manufacturerBytes = manufacturer.toByteArray(Charsets.UTF_8)
-        val productBytes = product.toByteArray(Charsets.UTF_8)
-        val serialBytes = serialNumber.toByteArray(Charsets.UTF_8)
+        // VUSB_DEVICE_INFO is exactly 208 bytes
+        val infoSize = 208
+        val descriptors = deviceDescriptor + configDescriptor
+        val totalSize = infoSize + 4 + descriptors.size  // info + length + descriptors
         
-        // Calculate total size
-        val size = 4 + // deviceId
-                   2 + // vendorId
-                   2 + // productId
-                   1 + // deviceClass
-                   1 + // deviceSubclass
-                   1 + // deviceProtocol
-                   1 + // speed
-                   1 + manufacturerBytes.size + // manufacturer length + data
-                   1 + productBytes.size + // product length + data
-                   1 + serialBytes.size + // serial length + data
-                   2 + deviceDescriptor.size + // descriptor length + data
-                   2 + configDescriptor.size   // config descriptor length + data
-        
-        val buffer = ByteBuffer.allocate(size)
+        val buffer = ByteBuffer.allocate(totalSize)
         buffer.order(ByteOrder.LITTLE_ENDIAN)
         
+        // DeviceId (4 bytes)
         buffer.putInt(deviceId)
+        
+        // VendorId, ProductId (2 bytes each)
         buffer.putShort(vendorId.toShort())
         buffer.putShort(productId.toShort())
+        
+        // DeviceClass, DeviceSubClass, DeviceProtocol, Speed (1 byte each)
         buffer.put(deviceClass)
         buffer.put(deviceSubclass)
         buffer.put(deviceProtocol)
         buffer.put(speed)
         
-        buffer.put(manufacturerBytes.size.toByte())
-        buffer.put(manufacturerBytes)
+        // NumConfigurations, NumInterfaces, Reserved[2] (4 bytes total)
+        buffer.put(numConfigurations)
+        buffer.put(numInterfaces)
+        buffer.put(0) // Reserved[0]
+        buffer.put(0) // Reserved[1]
         
-        buffer.put(productBytes.size.toByte())
-        buffer.put(productBytes)
+        // Fixed-size strings (64 bytes each, null-padded)
+        buffer.put(fixedString(manufacturer, 64))
+        buffer.put(fixedString(product, 64))
+        buffer.put(fixedString(serialNumber, 64))
         
-        buffer.put(serialBytes.size.toByte())
-        buffer.put(serialBytes)
-        
-        buffer.putShort(deviceDescriptor.size.toShort())
-        buffer.put(deviceDescriptor)
-        
-        buffer.putShort(configDescriptor.size.toShort())
-        buffer.put(configDescriptor)
+        // Descriptor length (4 bytes) followed by descriptors
+        buffer.putInt(descriptors.size)
+        buffer.put(descriptors)
         
         return buffer.array()
+    }
+    
+    private fun fixedString(str: String, length: Int): ByteArray {
+        val result = ByteArray(length)
+        val bytes = str.toByteArray(Charsets.UTF_8)
+        val copyLen = minOf(bytes.size, length - 1)  // Leave room for null terminator
+        System.arraycopy(bytes, 0, result, 0, copyLen)
+        return result
     }
     
     override fun equals(other: Any?): Boolean {
@@ -300,27 +334,32 @@ data class UrbComplete(
 }
 
 /**
- * Connect message payload
+ * Connect message payload matching VUSB_CONNECT_REQUEST (72 bytes)
+ * - ClientVersion: 4 bytes
+ * - Capabilities: 4 bytes  
+ * - ClientName: 64 bytes (fixed, null-padded)
  */
 data class ConnectMessage(
     val clientName: String,
-    val clientVersion: String = "1.0.0",
-    val platform: String = "Android"
+    val clientVersion: Int = 0x00010000,
+    val capabilities: Int = 0
 ) {
     fun toByteArray(): ByteArray {
-        val nameBytes = clientName.toByteArray(Charsets.UTF_8)
-        val versionBytes = clientVersion.toByteArray(Charsets.UTF_8)
-        val platformBytes = platform.toByteArray(Charsets.UTF_8)
-        
-        val buffer = ByteBuffer.allocate(3 + nameBytes.size + versionBytes.size + platformBytes.size)
+        val buffer = ByteBuffer.allocate(72)
         buffer.order(ByteOrder.LITTLE_ENDIAN)
         
-        buffer.put(nameBytes.size.toByte())
-        buffer.put(nameBytes)
-        buffer.put(versionBytes.size.toByte())
-        buffer.put(versionBytes)
-        buffer.put(platformBytes.size.toByte())
-        buffer.put(platformBytes)
+        // ClientVersion (4 bytes)
+        buffer.putInt(clientVersion)
+        
+        // Capabilities (4 bytes)
+        buffer.putInt(capabilities)
+        
+        // ClientName (64 bytes, fixed, null-padded)
+        val nameBytes = clientName.toByteArray(Charsets.UTF_8)
+        val nameBuffer = ByteArray(64)
+        val copyLen = minOf(nameBytes.size, 63)  // Leave room for null terminator
+        System.arraycopy(nameBytes, 0, nameBuffer, 0, copyLen)
+        buffer.put(nameBuffer)
         
         return buffer.array()
     }
