@@ -114,6 +114,30 @@ Windows App → USB Stack → Virtual USB Driver → Server → Network → Clie
                                                Response              Response
 ```
 
+### Interrupt Endpoint Polling
+
+For game controllers and other HID devices, the mobile clients implement continuous interrupt endpoint polling:
+
+1. **When a device attaches**, the client scans for interrupt IN endpoints
+2. **A background coroutine/task** continuously reads from each interrupt endpoint
+3. **Data changes are detected** to reduce unnecessary network traffic
+4. **URB completions are sent proactively** to the server without waiting for URB_SUBMIT
+
+The interrupt URB format uses a special URB ID to distinguish from normal URB responses:
+- Bit 31 = 1 (interrupt flag)
+- Bits 16-23 = Device ID
+- Bits 0-7 = Endpoint address
+
+This approach provides low-latency input for:
+- Game controllers (button states, joystick positions)
+- Mice (movement data)
+- Keyboards (key events)
+- Other HID devices
+
+Files involved:
+- Android: `InterruptPoller.kt` - Polls using Android USB Host API
+- macOS: `InterruptPoller.swift` - Polls using IOKit USB interfaces
+
 ### Key Data Structures
 
 - `VUSB_HEADER` - Protocol message header (all messages)

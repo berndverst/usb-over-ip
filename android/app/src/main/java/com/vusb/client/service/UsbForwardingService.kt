@@ -17,6 +17,7 @@ import com.vusb.client.R
 import com.vusb.client.network.VusbNetworkClient
 import com.vusb.client.protocol.*
 import com.vusb.client.ui.MainActivity
+import com.vusb.client.usb.InterruptPoller
 import com.vusb.client.usb.UrbHandler
 import com.vusb.client.usb.UsbDeviceManager
 import kotlinx.coroutines.*
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Foreground service for USB device forwarding
@@ -68,6 +70,13 @@ class UsbForwardingService : LifecycleService() {
     private lateinit var usbManager: UsbDeviceManager
     private lateinit var networkClient: VusbNetworkClient
     private lateinit var urbHandler: UrbHandler
+    private lateinit var interruptPoller: InterruptPoller
+    
+    // Interrupt data forwarding job
+    private var interruptForwardingJob: Job? = null
+    
+    // URB ID counter for interrupt-initiated transfers
+    private val interruptUrbIdCounter = AtomicInteger(0x80000000.toInt())
     
     // Attached devices (deviceId -> DeviceInfo)
     private val attachedDevices = ConcurrentHashMap<Int, DeviceInfo>()
@@ -94,6 +103,7 @@ class UsbForwardingService : LifecycleService() {
         usbManager = UsbDeviceManager(this)
         networkClient = VusbNetworkClient()
         urbHandler = UrbHandler(usbManager)
+        interruptPoller = InterruptPoller(usbManager)
         
         usbManager.initialize()
         
@@ -112,6 +122,7 @@ class UsbForwardingService : LifecycleService() {
     override fun onDestroy() {
         Log.d(TAG, "Service destroyed")
         stopForwarding()
+        interruptPoller.stopAll()
         usbManager.cleanup()
         super.onDestroy()
     }
@@ -185,6 +196,9 @@ class UsbForwardingService : LifecycleService() {
                 if (connected) {
                     _serviceState.value = ServiceState.Running(serverAddress, 0)
                     
+                    // Start interrupt data forwarding
+                    startInterruptForwarding()
+                    
                     // Auto-attach devices if enabled
                     if (autoAttach) {
                         delay(500) // Wait for connection to stabilize
@@ -207,6 +221,10 @@ class UsbForwardingService : LifecycleService() {
      */
     fun stopForwarding() {
         Log.d(TAG, "Stopping forwarding")
+        
+        // Stop interrupt forwarding
+        interruptForwardingJob?.cancel()
+        interruptForwardingJob = null
         
         // Detach all devices
         lifecycleScope.launch {
@@ -268,6 +286,9 @@ class UsbForwardingService : LifecycleService() {
             attachedDevices[device.deviceId] = deviceInfo
             updateServiceState()
             
+            // Start interrupt endpoint polling for game controllers
+            interruptPoller.startPolling(device)
+            
             Log.d(TAG, "Device attached: ${device.deviceName}")
             true
         } catch (e: Exception) {
@@ -286,6 +307,9 @@ class UsbForwardingService : LifecycleService() {
                 return@withContext false
             }
             
+            // Stop interrupt polling
+            interruptPoller.stopPolling(deviceId)
+            
             // Send detach to server
             networkClient.detachDevice(deviceId)
             
@@ -302,6 +326,42 @@ class UsbForwardingService : LifecycleService() {
             Log.e(TAG, "Failed to detach device", e)
             false
         }
+    }
+    
+    /**
+     * Start forwarding interrupt endpoint data to the server.
+     * This collects data from the InterruptPoller and sends it as URB completions.
+     */
+    private fun startInterruptForwarding() {
+        interruptForwardingJob = lifecycleScope.launch(Dispatchers.IO) {
+            interruptPoller.interruptData.collect { interruptData ->
+                try {
+                    // Create a URB complete message for the interrupt data
+                    // Use a high URB ID to distinguish from normal URB responses
+                    // Format: bit 31 = interrupt flag, bits 16-23 = device ID, bits 0-7 = endpoint
+                    val urbId = (0x80000000.toInt()) or 
+                                ((interruptData.deviceId and 0xFF) shl 16) or 
+                                (interruptData.endpointAddress and 0xFF)
+                    
+                    val urbComplete = UrbComplete(
+                        urbId = urbId,
+                        status = VusbProtocol.UsbdStatus.SUCCESS,
+                        actualLength = interruptData.data.size,
+                        data = interruptData.data
+                    )
+                    
+                    networkClient.sendUrbComplete(urbComplete)
+                    
+                    Log.v(TAG, "Forwarded interrupt data: device=${interruptData.deviceId}, " +
+                            "endpoint=0x${interruptData.endpointAddress.toString(16)}, " +
+                            "size=${interruptData.data.size}")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to forward interrupt data", e)
+                }
+            }
+        }
+        
+        Log.d(TAG, "Started interrupt data forwarding")
     }
     
     /**
