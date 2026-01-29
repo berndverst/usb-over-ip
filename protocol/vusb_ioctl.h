@@ -10,6 +10,8 @@
 
 #ifdef _KERNEL_MODE
 #include <ntddk.h>
+#include <wdm.h>
+#include <wdmguid.h>
 #else
 #include <windows.h>
 #include <winioctl.h>
@@ -23,8 +25,12 @@ extern "C" {
 
 /* Device interface GUID for the virtual USB controller */
 /* {8D8E8C7A-1B2C-4D5E-9F0A-1B2C3D4E5F6A} */
+#ifdef INITGUID
 DEFINE_GUID(GUID_DEVINTERFACE_VUSB_CONTROLLER,
     0x8d8e8c7a, 0x1b2c, 0x4d5e, 0x9f, 0x0a, 0x1b, 0x2c, 0x3d, 0x4e, 0x5f, 0x6a);
+#else
+EXTERN_C const GUID GUID_DEVINTERFACE_VUSB_CONTROLLER;
+#endif
 
 /* Device type for IOCTL codes */
 #define FILE_DEVICE_VUSB    0x8000
@@ -51,26 +57,26 @@ typedef struct _VUSB_VERSION_INFO {
     uint32_t    ProtocolVersion;    /* Supported protocol version */
     uint32_t    MaxDevices;         /* Maximum supported devices */
     uint32_t    Capabilities;       /* Driver capabilities */
-} VUSB_VERSION_INFO;
+} VUSB_VERSION_INFO, *PVUSB_VERSION_INFO;
 
 /* Plugin device request */
 typedef struct _VUSB_PLUGIN_REQUEST {
     VUSB_DEVICE_INFO    DeviceInfo;
     uint32_t            DescriptorLength;
     /* Followed by descriptor data */
-} VUSB_PLUGIN_REQUEST;
+} VUSB_PLUGIN_REQUEST, *PVUSB_PLUGIN_REQUEST;
 
 /* Plugin device response */
 typedef struct _VUSB_PLUGIN_RESPONSE {
     uint32_t    Status;             /* Result status */
     uint32_t    DeviceId;           /* Assigned device ID */
     uint32_t    PortNumber;         /* Assigned port number */
-} VUSB_PLUGIN_RESPONSE;
+} VUSB_PLUGIN_RESPONSE, *PVUSB_PLUGIN_RESPONSE;
 
 /* Unplug device request */
 typedef struct _VUSB_UNPLUG_REQUEST {
     uint32_t    DeviceId;           /* Device to unplug */
-} VUSB_UNPLUG_REQUEST;
+} VUSB_UNPLUG_REQUEST, *PVUSB_UNPLUG_REQUEST;
 
 /* Device list entry */
 typedef struct _VUSB_DEVICE_ENTRY {
@@ -84,7 +90,7 @@ typedef struct _VUSB_DEVICE_ENTRY {
 typedef struct _VUSB_DEVICE_LIST {
     uint32_t            DeviceCount;
     VUSB_DEVICE_ENTRY   Devices[VUSB_MAX_DEVICES];
-} VUSB_DEVICE_LIST;
+} VUSB_DEVICE_LIST, *PVUSB_DEVICE_LIST;
 
 /* Pending URB information (sent to user mode for processing) */
 typedef struct _VUSB_PENDING_URB {
@@ -100,7 +106,7 @@ typedef struct _VUSB_PENDING_URB {
     uint32_t            Interval;
     VUSB_SETUP_PACKET   SetupPacket;
     /* For OUT transfers, data follows */
-} VUSB_PENDING_URB;
+} VUSB_PENDING_URB, *PVUSB_PENDING_URB;
 
 /* URB completion (from user mode to driver) */
 typedef struct _VUSB_URB_COMPLETION {
@@ -110,13 +116,13 @@ typedef struct _VUSB_URB_COMPLETION {
     uint32_t    Status;             /* VUSB_STATUS */
     uint32_t    ActualLength;
     /* For IN transfers, data follows */
-} VUSB_URB_COMPLETION;
+} VUSB_URB_COMPLETION, *PVUSB_URB_COMPLETION;
 
 /* URB cancel request */
 typedef struct _VUSB_URB_CANCEL_REQUEST {
     uint32_t    DeviceId;
     uint32_t    UrbId;
-} VUSB_URB_CANCEL_REQUEST;
+} VUSB_URB_CANCEL_REQUEST, *PVUSB_URB_CANCEL_REQUEST;
 
 /* Driver statistics */
 typedef struct _VUSB_STATISTICS {
@@ -128,7 +134,7 @@ typedef struct _VUSB_STATISTICS {
     uint64_t    TotalErrors;
     uint32_t    ActiveDevices;
     uint32_t    PendingUrbs;
-} VUSB_STATISTICS;
+} VUSB_STATISTICS, *PVUSB_STATISTICS;
 
 /* Device state */
 typedef enum _VUSB_DEVICE_STATE {

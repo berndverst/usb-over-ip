@@ -8,7 +8,15 @@
 #ifndef VUSB_PROTOCOL_H
 #define VUSB_PROTOCOL_H
 
+#ifdef _KERNEL_MODE
+#include <ntddk.h>
+typedef UCHAR uint8_t;
+typedef USHORT uint16_t;
+typedef ULONG uint32_t;
+typedef ULONG64 uint64_t;
+#else
 #include <stdint.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -145,7 +153,7 @@ typedef struct _VUSB_DEVICE_INFO {
     char        Manufacturer[64];   /* Manufacturer string */
     char        Product[64];        /* Product string */
     char        SerialNumber[64];   /* Serial number string */
-} VUSB_DEVICE_INFO;
+} VUSB_DEVICE_INFO, *PVUSB_DEVICE_INFO;
 
 /* Connect Request */
 typedef struct _VUSB_CONNECT_REQUEST {
@@ -192,7 +200,7 @@ typedef struct _VUSB_SETUP_PACKET {
     uint16_t    wValue;
     uint16_t    wIndex;
     uint16_t    wLength;
-} VUSB_SETUP_PACKET;
+} VUSB_SETUP_PACKET, *PVUSB_SETUP_PACKET;
 
 /* URB (USB Request Block) Submit */
 typedef struct _VUSB_URB_SUBMIT {
