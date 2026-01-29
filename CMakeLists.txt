@@ -65,8 +65,19 @@ add_executable(vusb_install
 )
 target_link_libraries(vusb_install PRIVATE setupapi newdev)
 
+# Userspace server/driver combination (no kernel driver required)
+add_executable(vusb_userspace
+    userspace/vusb_userspace_main.c
+    userspace/vusb_userspace.c
+    userspace/vusb_userspace.h
+)
+target_link_libraries(vusb_userspace PRIVATE vusb_protocol)
+if(WIN32)
+    target_link_libraries(vusb_userspace PRIVATE ws2_32)
+endif()
+
 # Install targets
-install(TARGETS vusb_server vusb_client vusb_client_capture vusb_test vusb_install
+install(TARGETS vusb_server vusb_client vusb_client_capture vusb_test vusb_install vusb_userspace
     RUNTIME DESTINATION bin
 )
 
