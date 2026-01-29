@@ -1,0 +1,320 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		/* App Sources */
+		MAIN_APP_SWIFT /* VusbClientApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAIN_APP_REF; };
+		CONTENT_VIEW_SWIFT /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CONTENT_VIEW_REF; };
+		SETTINGS_VIEW_SWIFT /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SETTINGS_VIEW_REF; };
+		DEVICE_LIST_SWIFT /* DeviceListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEVICE_LIST_REF; };
+		DEVICE_ROW_SWIFT /* DeviceRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEVICE_ROW_REF; };
+		
+		/* Protocol */
+		PROTOCOL_SWIFT /* VusbProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROTOCOL_REF; };
+		
+		/* Network */
+		NETWORK_CLIENT_SWIFT /* VusbNetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = NETWORK_CLIENT_REF; };
+		
+		/* USB */
+		USB_MANAGER_SWIFT /* UsbDeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = USB_MANAGER_REF; };
+		
+		/* Models */
+		MODELS_SWIFT /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = MODELS_REF; };
+		
+		/* Assets */
+		ASSETS_BUILD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ASSETS_REF; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		PRODUCT_REF /* VusbClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VusbClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		MAIN_APP_REF /* VusbClientApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VusbClientApp.swift; sourceTree = "<group>"; };
+		CONTENT_VIEW_REF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		SETTINGS_VIEW_REF /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		DEVICE_LIST_REF /* DeviceListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceListView.swift; sourceTree = "<group>"; };
+		DEVICE_ROW_REF /* DeviceRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceRowView.swift; sourceTree = "<group>"; };
+		PROTOCOL_REF /* VusbProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VusbProtocol.swift; sourceTree = "<group>"; };
+		NETWORK_CLIENT_REF /* VusbNetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VusbNetworkClient.swift; sourceTree = "<group>"; };
+		USB_MANAGER_REF /* UsbDeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsbDeviceManager.swift; sourceTree = "<group>"; };
+		MODELS_REF /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		ASSETS_REF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		ENTITLEMENTS_REF /* VusbClient.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VusbClient.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		ROOT_GROUP = {
+			isa = PBXGroup;
+			children = (
+				SOURCE_GROUP,
+				PRODUCTS_GROUP,
+			);
+			sourceTree = "<group>";
+		};
+		PRODUCTS_GROUP /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				PRODUCT_REF,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		SOURCE_GROUP /* VusbClient */ = {
+			isa = PBXGroup;
+			children = (
+				MAIN_APP_REF,
+				VIEWS_GROUP,
+				PROTOCOL_GROUP,
+				NETWORK_GROUP,
+				USB_GROUP,
+				MODELS_GROUP,
+				ASSETS_REF,
+				ENTITLEMENTS_REF,
+			);
+			path = VusbClient;
+			sourceTree = "<group>";
+		};
+		VIEWS_GROUP /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				CONTENT_VIEW_REF,
+				SETTINGS_VIEW_REF,
+				DEVICE_LIST_REF,
+				DEVICE_ROW_REF,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		PROTOCOL_GROUP /* Protocol */ = {
+			isa = PBXGroup;
+			children = (
+				PROTOCOL_REF,
+			);
+			path = Protocol;
+			sourceTree = "<group>";
+		};
+		NETWORK_GROUP /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				NETWORK_CLIENT_REF,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		USB_GROUP /* USB */ = {
+			isa = PBXGroup;
+			children = (
+				USB_MANAGER_REF,
+			);
+			path = USB;
+			sourceTree = "<group>";
+		};
+		MODELS_GROUP /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				MODELS_REF,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		TARGET_REF /* VusbClient */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BUILD_CONFIG_LIST_TARGET;
+			buildPhases = (
+				SOURCES_PHASE,
+				RESOURCES_PHASE,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VusbClient;
+			productName = VusbClient;
+			productReference = PRODUCT_REF;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		PROJECT_REF /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = BUILD_CONFIG_LIST_PROJECT;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = ROOT_GROUP;
+			productRefGroup = PRODUCTS_GROUP;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				TARGET_REF,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		RESOURCES_PHASE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ASSETS_BUILD,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		SOURCES_PHASE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				MAIN_APP_SWIFT,
+				CONTENT_VIEW_SWIFT,
+				SETTINGS_VIEW_SWIFT,
+				DEVICE_LIST_SWIFT,
+				DEVICE_ROW_SWIFT,
+				PROTOCOL_SWIFT,
+				NETWORK_CLIENT_SWIFT,
+				USB_MANAGER_SWIFT,
+				MODELS_SWIFT,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		DEBUG_PROJECT /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		RELEASE_PROJECT /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		DEBUG_TARGET /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = VusbClient/VusbClient.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VusbClient/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "VUSB Client";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.vusb.client.macos;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		RELEASE_TARGET /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = VusbClient/VusbClient.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VusbClient/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "VUSB Client";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.vusb.client.macos;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BUILD_CONFIG_LIST_PROJECT /* Build configuration list for PBXProject "VusbClient" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DEBUG_PROJECT,
+				RELEASE_PROJECT,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BUILD_CONFIG_LIST_TARGET /* Build configuration list for PBXNativeTarget "VusbClient" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DEBUG_TARGET,
+				RELEASE_TARGET,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = PROJECT_REF /* Project object */;
+}
