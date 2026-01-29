@@ -33,6 +33,7 @@
 /* Global client context */
 static VUSB_CLIENT_CONTEXT g_ClientContext = {0};
 
+#ifndef VUSB_CLIENT_NO_MAIN
 /**
  * main - Client entry point
  */
@@ -95,6 +96,7 @@ int main(int argc, char* argv[])
 
     return result;
 }
+#endif /* VUSB_CLIENT_NO_MAIN */
 
 /**
  * VusbClientInit - Initialize client
@@ -297,6 +299,7 @@ int VusbClientDetachDevice(PVUSB_CLIENT_CONTEXT ctx, uint32_t remoteDeviceId)
 {
     uint8_t buffer[sizeof(VUSB_HEADER) + sizeof(uint32_t)];
     VUSB_HEADER* header = (VUSB_HEADER*)buffer;
+    VUSB_HEADER response;
     int result;
 
     if (!ctx->Connected) {
@@ -308,6 +311,13 @@ int VusbClientDetachDevice(PVUSB_CLIENT_CONTEXT ctx, uint32_t remoteDeviceId)
 
     result = send(ctx->Socket, (char*)buffer, sizeof(buffer), 0);
     if (result != sizeof(buffer)) {
+        return -1;
+    }
+
+    /* Receive acknowledgment */
+    result = recv(ctx->Socket, (char*)&response, sizeof(response), MSG_WAITALL);
+    if (result != sizeof(response)) {
+        fprintf(stderr, "Failed to receive detach response\n");
         return -1;
     }
 

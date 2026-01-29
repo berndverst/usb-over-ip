@@ -6,8 +6,10 @@
 #define VUSB_SERVER_H
 
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #include <windows.h>
 #include "../protocol/vusb_protocol.h"
+#include "../protocol/vusb_ioctl.h"
 
 #define VUSB_SERVER_MAX_CLIENTS 32
 
@@ -40,6 +42,13 @@ typedef struct _VUSB_CLIENT_CONNECTION {
     VUSB_CLIENT_DEVICE      Devices[VUSB_MAX_DEVICES];
 } VUSB_CLIENT_CONNECTION, *PVUSB_CLIENT_CONNECTION;
 
+/* Simulated device entry (when driver not available) */
+typedef struct _VUSB_SIM_DEVICE {
+    BOOL                Active;
+    ULONG               DeviceId;
+    VUSB_DEVICE_INFO    DeviceInfo;
+} VUSB_SIM_DEVICE, *PVUSB_SIM_DEVICE;
+
 /* Server context */
 typedef struct _VUSB_SERVER_CONTEXT {
     VUSB_SERVER_CONFIG      Config;
@@ -52,6 +61,10 @@ typedef struct _VUSB_SERVER_CONTEXT {
     int                     ClientCount;
     ULONG                   NextSessionId;
     PVUSB_CLIENT_CONNECTION* Clients;
+    
+    /* Simulation mode device tracking */
+    ULONG                   NextSimDeviceId;
+    VUSB_SIM_DEVICE         SimDevices[VUSB_MAX_DEVICES];
 } VUSB_SERVER_CONTEXT, *PVUSB_SERVER_CONTEXT;
 
 /* Server functions */

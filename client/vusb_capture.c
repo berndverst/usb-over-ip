@@ -774,11 +774,9 @@ static int BuildDescriptorBuffer(PUSB_CAPTURED_DEVICE device)
  */
 static uint8_t GetDeviceSpeed(HANDLE deviceHandle)
 {
-    USB_NODE_CONNECTION_INFORMATION_EX connInfo;
-    DWORD bytesReturned;
-
-    /* This requires querying the hub, which is complex.
+    /* Getting device speed requires querying the hub, which is complex.
        For now, default to high speed. */
+    (void)deviceHandle;  /* Suppress unused parameter warning */
     return VUSB_SPEED_HIGH;
 }
 

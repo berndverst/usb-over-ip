@@ -118,7 +118,7 @@ typedef struct _VUSB_HEADER {
     uint16_t    Command;        /* VUSB_COMMAND */
     uint32_t    Length;         /* Payload length (excluding header) */
     uint32_t    Sequence;       /* Sequence number for request/response matching */
-} VUSB_HEADER;
+} VUSB_HEADER, *PVUSB_HEADER;
 
 /* Device Descriptor (simplified) */
 typedef struct _VUSB_DEVICE_DESCRIPTOR {
@@ -216,7 +216,7 @@ typedef struct _VUSB_URB_SUBMIT {
     uint32_t            Interval;           /* For interrupt/iso */
     VUSB_SETUP_PACKET   SetupPacket;        /* For control transfers */
     /* Followed by: uint8_t TransferBuffer[TransferBufferLength] for OUT transfers */
-} VUSB_URB_SUBMIT;
+} VUSB_URB_SUBMIT, *PVUSB_URB_SUBMIT;
 
 /* URB Completion */
 typedef struct _VUSB_URB_COMPLETE {
@@ -227,7 +227,7 @@ typedef struct _VUSB_URB_COMPLETE {
     uint32_t    ActualLength;       /* Actual bytes transferred */
     uint32_t    ErrorCount;         /* For isochronous */
     /* Followed by: uint8_t TransferBuffer[ActualLength] for IN transfers */
-} VUSB_URB_COMPLETE;
+} VUSB_URB_COMPLETE, *PVUSB_URB_COMPLETE;
 
 /* Cancel URB Request */
 typedef struct _VUSB_URB_CANCEL {

@@ -42,6 +42,7 @@ static void ProcessServerMessage(PVUSB_CLIENT_CONTEXT_EX ctx, PVUSB_HEADER heade
                                   uint8_t* payload, uint32_t payloadLength);
 static int SendUrbCompletion(void* ctx, uint32_t deviceId, uint32_t urbId,
                              uint32_t status, uint32_t actualLength, uint8_t* data);
+void RunEnhancedInteractive(PVUSB_CLIENT_CONTEXT_EX ctx);
 
 /**
  * main - Enhanced client entry point

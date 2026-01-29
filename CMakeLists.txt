@@ -47,6 +47,7 @@ add_executable(vusb_client_capture
     client/vusb_client_urb.c
     client/vusb_client_urb.h
 )
+target_compile_definitions(vusb_client_capture PRIVATE VUSB_CLIENT_NO_MAIN)
 target_link_libraries(vusb_client_capture PRIVATE vusb_protocol)
 if(WIN32)
     target_link_libraries(vusb_client_capture PRIVATE ws2_32 winusb setupapi)

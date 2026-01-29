@@ -612,10 +612,22 @@ void VusbServerHandleDeviceList(
 
     memset(&deviceList, 0, sizeof(deviceList));
 
-    /* Query driver */
+    /* Query driver or use simulation list */
     if (ctx->DriverHandle != INVALID_HANDLE_VALUE) {
         DeviceIoControl(ctx->DriverHandle, IOCTL_VUSB_GET_DEVICE_LIST,
                        NULL, 0, &deviceList, sizeof(deviceList), &bytesReturned, NULL);
+    } else {
+        /* Simulation mode - build list from SimDevices */
+        for (int i = 0; i < VUSB_MAX_DEVICES && deviceList.DeviceCount < VUSB_MAX_DEVICES; i++) {
+            if (ctx->SimDevices[i].Active) {
+                deviceList.Devices[deviceList.DeviceCount].DeviceId = ctx->SimDevices[i].DeviceId;
+                deviceList.Devices[deviceList.DeviceCount].PortNumber = i + 1;
+                deviceList.Devices[deviceList.DeviceCount].State = 5; /* CONFIGURED */
+                memcpy(&deviceList.Devices[deviceList.DeviceCount].DeviceInfo,
+                       &ctx->SimDevices[i].DeviceInfo, sizeof(VUSB_DEVICE_INFO));
+                deviceList.DeviceCount++;
+            }
+        }
     }
 
     /* Build response */
@@ -654,11 +666,21 @@ int VusbServerPluginDevice(
     *deviceId = 0;
 
     if (ctx->DriverHandle == INVALID_HANDLE_VALUE) {
-        /* Simulation mode - assign fake ID */
-        static ULONG nextId = 1;
-        *deviceId = nextId++;
-        printf("[SIM] Plugged device ID %u\n", *deviceId);
-        return 0;
+        /* Simulation mode - find free slot and track device */
+        for (int i = 0; i < VUSB_MAX_DEVICES; i++) {
+            if (!ctx->SimDevices[i].Active) {
+                ctx->SimDevices[i].Active = TRUE;
+                ctx->SimDevices[i].DeviceId = ++ctx->NextSimDeviceId;
+                memcpy(&ctx->SimDevices[i].DeviceInfo, deviceInfo, sizeof(VUSB_DEVICE_INFO));
+                ctx->SimDevices[i].DeviceInfo.DeviceId = ctx->SimDevices[i].DeviceId;
+                *deviceId = ctx->SimDevices[i].DeviceId;
+                printf("[SIM] Plugged device ID %u (VID:%04X PID:%04X)\n", 
+                       *deviceId, deviceInfo->VendorId, deviceInfo->ProductId);
+                return 0;
+            }
+        }
+        printf("[SIM] No free device slots!\n");
+        return -1;
     }
 
     /* Build plugin request */
@@ -698,8 +720,16 @@ int VusbServerUnplugDevice(PVUSB_SERVER_CONTEXT ctx, ULONG deviceId)
     DWORD bytesReturned;
 
     if (ctx->DriverHandle == INVALID_HANDLE_VALUE) {
-        printf("[SIM] Unplugged device ID %u\n", deviceId);
-        return 0;
+        /* Simulation mode - find and remove device */
+        for (int i = 0; i < VUSB_MAX_DEVICES; i++) {
+            if (ctx->SimDevices[i].Active && ctx->SimDevices[i].DeviceId == deviceId) {
+                ctx->SimDevices[i].Active = FALSE;
+                printf("[SIM] Unplugged device ID %u\n", deviceId);
+                return 0;
+            }
+        }
+        printf("[SIM] Device ID %u not found\n", deviceId);
+        return -1;
     }
 
     request.DeviceId = deviceId;
