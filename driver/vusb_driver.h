@@ -9,7 +9,7 @@
 
 #include <ntddk.h>
 #include <wdf.h>
-#include "../protocol/vusb_protocol.h"
+#include "../protocol/vusb_ioctl.h"
 
 /* Device naming */
 #define VUSB_DEVICE_NAME    L"\\Device\\VirtualUSB"

@@ -252,8 +252,8 @@ VusbHandleGetPendingUrb(
     }
 
     /* Get output buffer using MDL for direct I/O */
-    outputMdl = WdfRequestRetrieveOutputWdmMdl(Request, &outputMdl);
-    if (outputMdl != NULL) {
+    status = WdfRequestRetrieveOutputWdmMdl(Request, &outputMdl);
+    if (NT_SUCCESS(status) && outputMdl != NULL) {
         outputBuffer = MmGetSystemAddressForMdlSafe(outputMdl, NormalPagePriority);
     } else {
         /* Fallback to buffered I/O */

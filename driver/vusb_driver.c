@@ -13,7 +13,10 @@
 #include <initguid.h>
 
 #include "vusb_driver.h"
-#include "../protocol/vusb_ioctl.h"
+#include "trace.h"
+
+/* WPP Tracing - must be after trace.h include */
+#include "vusb_driver.tmh"
 
 /* Driver globals */
 WDFDRIVER g_Driver = NULL;

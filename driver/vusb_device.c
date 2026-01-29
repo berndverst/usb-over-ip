@@ -21,7 +21,6 @@ VusbCreateVirtualDevice(
     _Out_ PULONG DeviceId
 )
 {
-    NTSTATUS status = STATUS_SUCCESS;
     PVUSB_VIRTUAL_DEVICE vdev = NULL;
     KIRQL oldIrql;
     ULONG slot;

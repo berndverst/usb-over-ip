@@ -27,9 +27,11 @@ vusb.sys = 1,,
 ;*****************************************
 
 [Manufacturer]
-%ManufacturerName% = Standard,NTamd64
+%ManufacturerName% = Standard,NTamd64.10.0...16299
 
-[Standard.NTamd64]
+; Restrict to Windows 10 version 1709 (build 16299) or higher
+; Required because DIRID 13 syntax was introduced in this version
+[Standard.NTamd64.10.0...16299]
 %VirtualUSB.DeviceDesc% = VirtualUSB_Device, Root\VirtualUSB
 
 [VirtualUSB_Device.NT]
